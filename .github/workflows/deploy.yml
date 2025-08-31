@@ -7,11 +7,10 @@ on:
     branches:
       - main
 
-# Using a top-level env block is cleaner.
-# !!! IMPORTANT: Make sure these values match your AWS setup !!!
+# !!! IMPORTANT: VERIFY THESE TWO VALUES !!!
 env:
   AWS_REGION: us-east-1                  # Or whatever your AWS region is
-  ECR_REPOSITORY: user-wallet-api         # Or whatever you named your ECR repository
+  ECR_REPOSITORY: user-wallet-api         # This MUST match the name in your ECR screenshot
 
 jobs:
   build-and-deploy:
@@ -41,11 +40,9 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          # Pass the full image URI to the next step
           echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Deploy to AWS App Runner
-        # We use the simpler start-deployment which doesn't require the AccessRoleArn secret
         run: |
           aws apprunner start-deployment \
             --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
