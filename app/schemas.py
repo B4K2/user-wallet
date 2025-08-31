@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class Wallet(BaseModel):
@@ -7,6 +7,11 @@ class Wallet(BaseModel):
 
     class Config:
         orm_mode = True
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr  
+    phone: str
 
 class User(BaseModel):
     id: int
