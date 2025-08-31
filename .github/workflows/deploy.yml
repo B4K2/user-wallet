@@ -1,0 +1,54 @@
+# .github/workflows/deploy.yml
+
+name: Build and Deploy to AWS App Runner
+
+# This workflow runs on any push to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Check out the repository's code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Configure AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Step 3: Login to Amazon ECR
+    - name: Login to Amazon ECR
+      uses: aws-actions/login-to-amazon-ecr@v1
+      id: login-ecr
+
+    # Step 4: Build, tag, and push image to Amazon ECR
+    - name: Build and push Docker image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: user-wallet-api # Must match your ECR repo name
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    # Step 5: Start a new deployment on AWS App Runner
+    - name: Deploy to AWS App Runner
+      run: |
+        aws apprunner start-deployment \
+          --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+          --source-configuration '{
+              "ImageRepository": {
+                  "ImageIdentifier": "${{ steps.login-ecr.outputs.registry }}/user-wallet-api:${{ github.sha }}",
+                  "ImageRepositoryType": "ECR"
+              }
+          }'
