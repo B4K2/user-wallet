@@ -10,3 +10,5 @@ wheels/
 .venv
 
 .env
+
+wallet-api-key.pem
