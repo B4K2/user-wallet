@@ -55,6 +55,21 @@ def update_wallet(update_data: schemas.WalletUpdate, db: Session = Depends(get_d
         
     return db_transaction
 
+@app.get("/users/{user_id}/transactions/", response_model=list[schemas.Transaction])
+def read_user_transactions(user_id: int, db: Session = Depends(get_db)):
+    """
+    Retrieve the full transaction history for a specific user.
+    """
+    db_user = crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"User with id {user_id} not found"
+        )
+    
+    transactions = crud.get_user_transactions(db=db, user_id=user_id)
+    return transactions
+
 
 @app.get("/")
 def read_root():

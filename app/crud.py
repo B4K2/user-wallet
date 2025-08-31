@@ -1,3 +1,4 @@
+from sqlalchemy import desc
 from sqlalchemy.orm import Session, joinedload
 from . import models, schemas
 
@@ -71,3 +72,19 @@ def create_user_transaction(db: Session, user_id: int, amount: float):
     db.refresh(db_transaction)
     
     return db_transaction
+
+def get_user(db: Session, user_id: int):
+    """
+    Fetch a single user by their ID.
+    """
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def get_user_transactions(db: Session, user_id: int):
+    """
+    Fetch all transactions for a specific user, ordered by the most recent first.
+    """
+    return db.query(models.Transaction)\
+        .join(models.Wallet)\
+        .filter(models.Wallet.user_id == user_id)\
+        .order_by(desc(models.Transaction.timestamp))\
+        .all()
