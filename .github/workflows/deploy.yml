@@ -49,13 +49,19 @@ jobs:
           unzip -o awscliv2.zip
           sudo ./aws/install --update
 
-      - name: Deploy to AWS App Runner
+      - name: Update App Runner service and trigger deployment
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
         run: |
-          aws apprunner start-deployment \
-            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+          aws apprunner update-service \
+            --service-arn $APP_RUNNER_SERVICE_ARN \
             --source-configuration '{
-                "ImageRepository": {
-                    "ImageIdentifier": "${{ steps.build-image.outputs.IMAGE_URI }}",
-                    "ImageRepositoryType": "ECR"
-                }
+              "ImageRepository": {
+                "ImageIdentifier": "${{ env.IMAGE_URI }}",
+                "ImageRepositoryType": "ECR",
+                "ImageConfiguration": { "Port": "8000" }
+              },
+              "AuthenticationConfiguration": {
+                "AccessRoleArn": "${{ secrets.APP_RUNNER_ECR_ACCESS_ROLE_ARN }}"
+              }
             }'
