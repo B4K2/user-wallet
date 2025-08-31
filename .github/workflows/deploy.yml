@@ -7,10 +7,9 @@ on:
     branches:
       - main
 
-# !!! IMPORTANT: VERIFY THESE TWO VALUES !!!
 env:
-  AWS_REGION: us-east-1                  # Or whatever your AWS region is
-  ECR_REPOSITORY: user-wallet-api         # This MUST match the name in your ECR screenshot
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: user-wallet-api
 
 jobs:
   build-and-deploy:
@@ -30,7 +29,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v1 # The fix you discovered
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -41,6 +40,14 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # --- THIS IS THE NEW STEP TO FIX THE ERROR ---
+      - name: Update AWS CLI
+        run: |
+          echo "Updating AWS CLI"
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -o awscliv2.zip
+          sudo ./aws/install --update
 
       - name: Deploy to AWS App Runner
         run: |
