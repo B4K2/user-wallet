@@ -35,6 +35,26 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
 
+@app.post("/wallets/update/", response_model=schemas.Transaction)
+def update_wallet(update_data: schemas.WalletUpdate, db: Session = Depends(get_db)):
+    """
+    Update a user's wallet balance by adding or subtracting an amount.
+    A transaction record will be created for this operation.
+    """
+    db_transaction = crud.create_user_transaction(
+        db=db, 
+        user_id=update_data.user_id, 
+        amount=update_data.amount
+    )
+    
+    if db_transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"User with id {update_data.user_id} not found"
+        )
+        
+    return db_transaction
+
 
 @app.get("/")
 def read_root():

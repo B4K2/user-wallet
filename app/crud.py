@@ -42,3 +42,32 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     
     return db_user
+
+def create_user_transaction(db: Session, user_id: int, amount: float):
+    """
+    Updates a user's wallet balance and creates a transaction record.
+    - user_id: The ID of the user whose wallet is being updated.
+    - amount: The amount to add (positive) or subtract (negative).
+    """
+    db_wallet = db.query(models.Wallet).filter(models.Wallet.user_id == user_id).first()
+    
+    if not db_wallet:
+        return None
+
+    db_wallet.balance += amount
+    
+    transaction_type = "credit" if amount >= 0 else "debit"
+    
+    db_transaction = models.Transaction(
+        amount=amount,
+        type=transaction_type,
+        wallet_id=db_wallet.id
+    )
+    
+    db.add(db_transaction)
+    
+    db.commit()
+    
+    db.refresh(db_transaction)
+    
+    return db_transaction
